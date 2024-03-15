@@ -6,21 +6,52 @@ import { SocketCount } from "../logic/socket.count";
 import { ICheckAnswer, IPollInput } from "../stores/interfaces/poll.interface";
 
 export class PollHelper {
+    static async previousPolls(count: number) {
+        try {
+            const questions = await pollModel
+                .find({})
+                .sort({ createdAt: -1 })
+                .limit(count)
+                .populate({
+                    path: "options",
+                    model: "PollOptions",
+                });
+
+            const response = questions.map((question: any) => {
+                const options = question.options.map((option: any) => {
+                    return {
+                        option: option.option,
+                        votes: option.votes,
+                    };
+                });
+
+                return {
+                    question: question.question,
+                    options,
+                };
+            });
+            return response;
+        } catch (error) {
+            console.error(
+                `Error in Helper ${PollHelper.previousPolls.name} - ${error}`
+            );
+            throw error;
+        }
+    }
     static async createPoll(data: IPollInput): Promise<IPollInput> {
         try {
-            console.log(SocketCount.getVoters());
-            const previousQuestions = await pollModel.findOne({
-                createdAt: -1,
-            });
-            if (previousQuestions && previousQuestions.votes) {
+            const previousQuestions: any = await pollModel
+                .findOne({})
+                .sort({ createdAt: -1 });
+            if (previousQuestions) {
                 if (
-                    previousQuestions.votes >= SocketCount.getVoters() ||
+                    previousQuestions.votes < SocketCount.getVoterCount() &&
                     new Date(
                         (previousQuestions.answerTime + 1) * 1000 +
                             previousQuestions.createdAt.getTime()
-                    ).toISOString() < new Date().toISOString()
+                    ).toISOString() > new Date().toISOString()
                 ) {
-                    throw new Error("The previous question is still open.");
+                    throw new Error("All sockets have not voted yet.");
                 }
             }
             const pollOptions = data.options;
@@ -44,8 +75,6 @@ export class PollHelper {
                 isMultiAnswer: data.isMultiAnswer,
                 answerTime: data.answerTime,
             });
-
-            console.log(poll);
 
             data.question = {
                 [data.question.toString()]: poll._id.toString(),
@@ -79,7 +108,6 @@ export class PollHelper {
 
     static async checkAnswer(data: ICheckAnswer) {
         try {
-            console.log(data);
             let selectedOptions: any[] = [];
             const question: any = await pollModel
                 .findByIdAndUpdate(data.question, {

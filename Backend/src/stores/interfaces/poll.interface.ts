@@ -25,6 +25,6 @@ export interface IPollInput {
 export interface ICheckAnswer {
     question: string;
     selectedOptions: string[];
-    answerTime: number;
-    isMultiAnswer: boolean;
+    answerTime?: number;
+    isMultiAnswer?: boolean;
 }

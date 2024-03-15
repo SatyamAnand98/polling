@@ -34,8 +34,8 @@ const Student = () => {
     const [isSubmitted, setIsSubmitted] = useState(
         JSON.parse(sessionStorage.getItem("isSubmitted")) || false
     );
-    const [timeRemaining, setTimeRemaining] = useState(0); // State for time remaining
-    const [isTimerOver, setIsTimerOver] = useState(false); // State to track if timer is over
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [isTimerOver, setIsTimerOver] = useState(false);
 
     useEffect(() => {
         const webSocketUrl = "http://localhost:8080";
@@ -44,13 +44,38 @@ const Student = () => {
 
         newSocket.on("connect", () => {
             dispatch(setSocketId({ id: newSocket.id }));
+            const userName = prompt("Please enter your name:");
+            if (userName) {
+                fetch("http://localhost:8080/map/user", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: userName,
+                        socketId: newSocket.id,
+                    }),
+                })
+                    .then((response) => {
+                        console.log(
+                            "User data sent to the API:",
+                            response.data
+                        );
+                    })
+                    .catch((error) => {
+                        console.error(
+                            "Error while sending user data to the API:",
+                            error
+                        );
+                    });
+            }
         });
 
         newSocket.on("poll", (data) => {
             setPollData(data);
             setIsSubmitted(false);
-            setTimeRemaining(data.answerTime); // Update time remaining when new poll is received
-            setIsTimerOver(false); // Reset timer over state when new poll is received
+            setTimeRemaining(data.answerTime);
+            setIsTimerOver(false);
         });
 
         newSocket.on("pollResult", (result) => {
@@ -86,7 +111,6 @@ const Student = () => {
             }
         }, 1000);
 
-        // Clear the timer when component unmounts or when the poll is submitted
         return () => clearInterval(timer);
     }, [timeRemaining, isSubmitted]);
 
@@ -94,8 +118,6 @@ const Student = () => {
         const data = {
             question: selectedQuestionId,
             selectedOptions: selectedOptionId,
-            answerTime: pollData.answerTime,
-            isMultiAnswer: pollData.isMultiAnswer,
         };
         const question = document.getElementById("questions");
         if (question) {

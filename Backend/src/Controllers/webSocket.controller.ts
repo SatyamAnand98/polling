@@ -5,6 +5,24 @@ import { ICheckAnswer, IPollInput } from "../stores/interfaces/poll.interface";
 import { ISuccessResponse } from "../stores/interfaces/response.interface";
 
 export class WebSocketController {
+    static async previousPolls(count: number) {
+        try {
+            const response = await PollHelper.previousPolls(count);
+            const responseObj: ISuccessResponse = {
+                message: "Previous polls have been fetched.",
+                data: response,
+                meta: {
+                    error: false,
+                },
+            };
+            return responseObj;
+        } catch (error) {
+            console.error(
+                `Error in ${WebSocketController.previousPolls.name} - ${error}`
+            );
+            throw error;
+        }
+    }
     static async createPoll(data: IPollInput) {
         try {
             const pollData = await newPollValidator.validateAsync(data);

@@ -38,14 +38,15 @@ class Server {
     setupSocketIO() {
         this.io.on("connection", (socket: Socket) => {
             console.log(`🤝 New client connected: ${socket.id}`);
-            SocketCount.setVoters();
+            SocketCount.setVoterCount();
 
             const SocketHandlerObj = new SocketProcessHandler(this.io, socket);
             SocketHandlerObj.handlePaths();
 
             socket.on("disconnect", () => {
                 console.log(`👋 Client disconnected: ${socket.id}`);
-                SocketCount.decreaseVoters();
+                SocketCount.removeVoter(socket.id);
+                SocketCount.decreaseVoterCount();
             });
         });
     }

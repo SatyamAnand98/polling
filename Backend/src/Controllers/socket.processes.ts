@@ -6,6 +6,7 @@ import {
 import { IPollInput } from "../stores/interfaces/poll.interface";
 import { WebSocketController } from "./webSocket.controller";
 import { EHTTP_STATUS } from "../stores/enums/httpStatusCodes";
+import { SocketCount } from "../logic/socket.count";
 
 class SocketProcessHandler {
     private io: SocketIOServer;
@@ -24,6 +25,22 @@ class SocketProcessHandler {
                 this.socket.broadcast.emit("poll", response);
             } catch (error: any) {
                 this.handleError("Error in poll event:", error);
+            }
+        });
+
+        this.socket.on("isTeacher", (data: boolean) => {
+            if (data) {
+                SocketCount.decreaseVoterCount();
+            }
+        });
+
+        this.socket.on("previousPolls", async (count: number) => {
+            try {
+                const response = await WebSocketController.previousPolls(count);
+                console.log("Previous Polls:", response);
+                this.socket.emit("previousPolls", response);
+            } catch (err) {
+                this.handleError("Error in previousPolls event:", err);
             }
         });
 

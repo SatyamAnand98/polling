@@ -7,8 +7,26 @@ import {
     IErrorResponse,
     ISuccessResponse,
 } from "../stores/interfaces/response.interface";
+import { SocketCount } from "../logic/socket.count";
 
 export class Poll {
+    static async handleUser(req: Request, res: Response) {
+        try {
+            const { name, socketId } = req.body;
+            SocketCount.addVoter(socketId, name);
+
+            return res.status(EHTTP_STATUS.OK).json({
+                success: true,
+                message: "Added user to the list",
+            });
+        } catch (error) {
+            console.error(`Error in ${Poll.handleUser.name} - ${error}`);
+            return res.status(EHTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Internal Server Error",
+            });
+        }
+    }
     static async createPoll(req: Request, res: Response): Promise<void> {
         try {
             const socketService = req.app.get("socketService");
